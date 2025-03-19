@@ -68,7 +68,7 @@ https://user-images.githubusercontent.com/51372520/226106086-2d7e4865-42ee-4771-
 1. First clone the project:
 
 ```bash
-git clone https://github.com/schardev/nfx
+git clone https://github.com/Amey4044/Netflix_Clone.git
 ```
 
 2. Go to project directory and install packages:
@@ -80,7 +80,7 @@ cd nfx && pnpm install
 3. Create `.env.local` file and paste your [TMDB API](https://developers.themoviedb.org/3) key:
 
 ```
-VITE_TMDB_API=<paste your api key here>
+VITE_TMDB_API=e745ed749123cc3d15250957541504b9
 ```
 
 4. Now start the application:
