@@ -1,0 +1,106 @@
+@use "reset.scss";
+@use "utility-classes.scss";
+@use "./mixins" as *;
+@use "./variables" as *;
+
+:root {
+  /* Colors */
+  --color-primary: hsl(0, 0%, 100%);
+  --color-secondary: hsl(0, 0%, 75%);
+  --color-background: hsl(0, 0%, 0%);
+  --color-background-values: 0, 0%, 0%;
+  --color-accent: hsl(357, 92%, 47%);
+  --grid-column-size: clamp(7.5rem, 10vw, 10rem);
+
+  @include for("tablet-up") {
+    --color-background: hsl(0, 0%, 8%);
+    --color-background-values: 0, 0%, 8%;
+  }
+
+  /* Fonts */
+  --ff-primary: Inter, sans-serif;
+
+  /* css-modular-type-generate */
+}
+
+h1 {
+  font-size: var(--font-size-4);
+}
+
+h2 {
+  font-size: var(--font-size-3);
+}
+
+h3 {
+  font-size: var(--font-size-2);
+}
+
+h4 {
+  font-size: var(--font-size-1);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: calc(2px + 2ex + 2px);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  font-family: var(--ff-primary);
+  font-size: var(--font-size-0);
+  color: var(--color-primary);
+  margin: 0 auto;
+
+  @include for("tablet-up") {
+    font-size: var(--font-size-1);
+  }
+}
+
+.video-frame {
+  > *:not(:last-child) {
+    margin-bottom: 0.5em;
+  }
+
+  &:not(:last-of-type) {
+    margin-bottom: 2em;
+  }
+
+  a {
+    display: block;
+    text-decoration: none;
+    color: currentColor;
+  }
+
+  &__img {
+    position: relative;
+    aspect-ratio: 1920 / 1080;
+
+    img {
+      object-fit: cover;
+      border-radius: $border-radius-2;
+      width: 100%;
+      height: 100%;
+    }
+
+    svg {
+      @include absolute-center;
+      width: 2.5em;
+      height: 2.5em;
+      padding: 0.5em;
+      fill: currentColor;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 10vh;
+    }
+  }
+
+  span {
+    display: block;
+    text-transform: capitalize;
+  }
+}

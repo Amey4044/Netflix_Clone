@@ -1,0 +1,42 @@
+@use "mixins" as *;
+
+.search {
+  margin-top: 5rem;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  background-color: #222;
+  margin-bottom: 2em;
+
+  @include for("tablet-up") {
+    font-size: var(--font-size-0);
+  }
+
+  input {
+    background-color: transparent;
+    width: 100%;
+    padding: 0.75em 0;
+    margin-right: 1em;
+    border: none;
+    caret-color: var(--color-accent);
+
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  svg {
+    margin-left: 1em;
+  }
+}
+
+.search-list {
+  padding: 0 1rem 4.5rem;
+
+  @include for("tablet-up") {
+    padding: 0 4vw;
+  }
+}

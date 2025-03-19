@@ -1,0 +1,51 @@
+@use "mixins" as *;
+@use "variables" as *;
+
+.main {
+  margin: 10vh 1em 0;
+
+  @include for("tablet-up") {
+    margin: 10vh 4vw 0;
+  }
+
+  h1 {
+    font-size: var(--font-size-1);
+    font-weight: 400;
+    margin-bottom: 1em;
+  }
+
+  div {
+    flex-wrap: wrap;
+  }
+
+  :global(.card) {
+    margin: 0;
+  }
+}
+
+.no-list {
+  @include flex-center(column);
+  gap: 2em;
+  margin: 0 1em;
+  min-height: 100vh;
+  font-size: var(--font-size-0);
+
+  p {
+    text-align: center;
+  }
+
+  svg {
+    color: #444;
+    width: 5em;
+    height: 5em;
+  }
+
+  button {
+    border-radius: $border-radius-1;
+    border: none;
+    background-color: var(--color-primary);
+    color: #000;
+    padding: 0.5em 1em;
+    font-weight: 600;
+  }
+}

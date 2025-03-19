@@ -1,0 +1,339 @@
+@use "mixins" as *;
+@use "variables" as *;
+
+/* Mini modal styles */
+.mini-motion-modal {
+  position: absolute;
+}
+
+.mini-modal-container {
+  position: relative;
+  z-index: 1;
+  border-radius: 5px;
+  width: clamp(10rem, 30vw, 30rem);
+  box-shadow: 0 0 10px 2px hsl(0, 0%, 0%, 0.7);
+  overflow-y: hidden;
+}
+
+.mini-player-menu {
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    border-radius: 100vh;
+    border: 2px solid #999;
+    background: transparent;
+    padding: 0.3em;
+
+    svg {
+      width: 1em;
+      height: 1em;
+    }
+  }
+
+  button:last-of-type {
+    margin-left: auto;
+  }
+
+  .play-btn {
+    border: 2px solid white;
+    background-color: white;
+
+    svg {
+      fill: black;
+    }
+  }
+}
+
+.mini-modal-info-container {
+  padding: 0.7em;
+  background-color: var(--color-background);
+
+  > *:not(:last-child) {
+    margin-bottom: 0.5em;
+  }
+
+  .genre-list {
+    $gap: 0.5em;
+    display: flex;
+    gap: $gap;
+    flex-wrap: wrap;
+    font-size: var(--font-size--2);
+
+    span:not(:first-child)::before {
+      content: "•";
+      letter-spacing: $gap; // letter-spacing and flex gap have to be same for consistent spacing
+      color: var(--color-accent);
+    }
+  }
+}
+
+.mini-modal-info-details {
+  line-height: 1.2;
+
+  h2 {
+    font-size: var(--font-size-0);
+  }
+
+  span {
+    font-size: var(--font-size--1);
+  }
+
+  span + span {
+    margin-left: 0.5em;
+  }
+}
+
+/* Big modal styles */
+.big-motion-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: scroll;
+  @extend %hide-scrollbars;
+}
+
+.big-modal-container {
+  --padding: min(4rem, 4vw);
+
+  position: absolute;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp($width-md, 75vw, $width-lg);
+  overflow-y: hidden;
+  border-radius: 5px;
+  padding-bottom: 5vh;
+
+  .player {
+    margin-block: -22%;
+
+    &-controls {
+      width: calc(100% - 2 * var(--padding));
+    }
+  }
+
+  > img {
+    width: 100%;
+  }
+}
+
+.big-player-menu {
+  display: flex;
+  gap: 0.5em;
+  flex: 1;
+
+  button {
+    font-size: var(--font-size-max-0);
+    background: transparent;
+    border: none;
+  }
+
+  button + button {
+    border: 1px solid #999;
+    border-radius: 100vh;
+    padding: 0.3em;
+  }
+}
+
+.big-modal-info-container {
+  padding: 1rem var(--padding) var(--padding);
+  background-color: var(--color-background);
+
+  > *:not(:last-child) {
+    margin-bottom: 4rem;
+  }
+}
+
+.big-modal-info-details {
+  display: flex;
+  gap: 1em;
+
+  span,
+  p {
+    font-size: var(--font-size--1);
+  }
+
+  &__left {
+    h2 {
+      font-size: var(--font-size-1);
+    }
+
+    span + span {
+      margin-left: 0.5em;
+    }
+
+    p {
+      margin-top: 1em;
+    }
+  }
+
+  &__right {
+    flex-shrink: 0.6;
+    line-height: 1;
+
+    > *:not(:last-child) {
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+.big-modal-info-about {
+  font-size: var(--font-size--1);
+
+  h2 {
+    font-size: var(--font-size-0);
+    font-weight: 400;
+    span {
+      font-weight: 600;
+    }
+  }
+
+  > *:not(:last-child) {
+    margin-bottom: 1em;
+  }
+}
+
+.sections {
+  background-color: var(--color-background);
+
+  > *:not(:last-child) {
+    margin-bottom: 4rem;
+  }
+
+  h2 {
+    font-size: var(--font-size-0);
+    margin-bottom: 1em;
+  }
+
+  .episodes-section {
+    form {
+      margin-left: auto;
+      font-size: var(--font-size-max-0);
+    }
+  }
+
+  .recommendation-section {
+    :global(.card) {
+      @include for("tablet-up") {
+        --cards-to-show: 4;
+      }
+
+      @include for("desktop-up") {
+        --cards-to-show: 6;
+      }
+    }
+  }
+
+  .trailers-section {
+    .video-frames {
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 1em 0.5em;
+
+      :global(.video-frame) {
+        margin: 0;
+        span {
+          font-size: var(--font-size--1);
+        }
+      }
+    }
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  border-radius: 100vh;
+  opacity: 0.5;
+  padding: 0.15em;
+  background-color: var(--color-background);
+  transition: opacity 0.3s ease-in-out;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+/* Utility styles */
+.span {
+  &-match {
+    font-weight: 600;
+    color: #46d369;
+  }
+
+  &-runtime {
+    font-size: var(--font-size-0);
+  }
+
+  &-title {
+    color: #777;
+  }
+}
+
+/* YouTube player styles */
+.player {
+  aspect-ratio: 1;
+  margin-block: -20%;
+  position: relative;
+  z-index: -1;
+
+  :global(.yt-player) {
+    height: 100%;
+  }
+
+  .logo {
+    position: absolute;
+    bottom: 32%;
+    left: var(--padding);
+    max-width: 50%;
+  }
+
+  &-controls {
+    @include flex-center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 25%;
+    width: 95%;
+  }
+
+  .play-btn {
+    @include flex-center; // TODO common banner btn style
+    gap: 0.2em;
+    background: white;
+    color: black;
+    border-radius: 5px;
+    padding: 0 1em;
+
+    span {
+      font-weight: 600;
+    }
+
+    svg {
+      fill: currentColor;
+    }
+  }
+
+  .mute-btn {
+    margin-left: auto;
+    background: transparent;
+    border: 2px solid #999;
+    border-radius: 100vh;
+    padding: 0.3em;
+    opacity: 0.7;
+    transition: opacity 200ms ease-in, background-color 200ms ease-in;
+
+    &:hover {
+      opacity: 1;
+      background-color: hsl(0, 0%, 0%, 0.55);
+    }
+
+    svg {
+      width: 1em;
+      height: 1em;
+    }
+  }
+}

@@ -1,0 +1,85 @@
+@use "sass:math";
+@use "sass:map";
+@use "./variables" as *;
+@use "utils" as util;
+
+%tap-transition {
+  transition: transform 100ms ease-in-out;
+
+  &:active:hover {
+    transform: scale(0.95) translateZ(0px);
+  }
+}
+
+%hide-scrollbars {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@mixin flex-center($flow: row) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  @if $flow == "column" {
+    flex-direction: column;
+  }
+}
+
+@mixin absolute-center($pos: xy) {
+  position: absolute;
+
+  @if $pos == "x" {
+    left: 50%;
+    transform: translateX(-50%);
+  } @else if $pos == "y" {
+    top: 50%;
+    transform: translateY(-50%);
+  } @else {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/**
+  * Create mixins from the map below with their respective breakpoints and
+  * media query.
+  *
+  * Usage:
+  *
+  * @mixin for('small-phone-only') {
+  *   // ... styles here ...
+  * }
+  *
+  * @mixin for('phone-only') {
+  *   // ... styles here ...
+  * }
+  *
+  */
+$media-queries: (
+  "small-phone-only": "max-width: #{$width-xs}",
+  "small-phone-up": "min-width: #{$width-xs}",
+  "phone-only": "max-width: #{$width-sm}",
+  "phone-up": "min-width: #{$width-sm}",
+  "tablet-only": "max-width: #{$width-md}",
+  "tablet-up": "min-width: #{$width-md}",
+  "desktop-only": "max-width: #{$width-lg}",
+  "desktop-up": "min-width: #{$width-lg}",
+  "big-desktop-only": "max-width: #{$width-xl}",
+  "big-desktop-up": "min-width: #{$width-xl}",
+);
+
+@mixin for($_query) {
+  $query: map.get($media-queries, $_query);
+  @if $query == null {
+    @error "Invalid query!";
+  } @else {
+    @media ($query) {
+      @content;
+    }
+  }
+}

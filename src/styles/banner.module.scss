@@ -1,0 +1,236 @@
+@use "mixins" as *;
+@use "variables" as *;
+
+.banner-container {
+  position: relative;
+  height: 60vh;
+  margin-bottom: 1.5rem;
+
+  @include for("tablet-up") {
+    height: 100vh;
+    margin-bottom: -10vh; // to bring the slider on top of the banner
+  }
+
+  // put the immediate slider component above the banner
+  & + * {
+    position: relative;
+  }
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background-image: linear-gradient(
+      to top,
+      var(--color-background),
+      rgba(0, 0, 0, 0.25) 30%
+    );
+  }
+}
+
+.player {
+  @include flex-center;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; // since the player's aspect ratio is huge intentionally
+  transition: opacity 0.35s ease-in;
+
+  &-control {
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: 20%;
+    margin-right: 4vw;
+    padding: 0.35em;
+    border: 1px solid currentColor;
+    border-radius: 100vh;
+
+    svg {
+      width: 1em;
+      height: 1em;
+    }
+  }
+
+  :global(.yt-player) {
+    position: relative;
+    aspect-ratio: 1920/1080;
+    height: 140vh; // just a workaround to hide those black bars and youtube-y stuff
+
+    @media (max-height: $width-md) {
+      height: unset;
+      width: 100%;
+    }
+  }
+}
+
+.banner-img {
+  @include flex-center(column);
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+
+  img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+}
+
+.banner-info {
+  @include flex-center(column);
+  position: absolute;
+  z-index: 1;
+  bottom: 0;
+  width: 100%;
+  padding: 0 1rem;
+
+  @include for("tablet-up") {
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    width: 45%;
+    align-items: flex-start;
+    padding-left: 4vw;
+  }
+
+  h1 {
+    text-align: center;
+
+    @include for("tablet-up") {
+      text-align: left;
+    }
+  }
+
+  p {
+    font-size: var(--font-size-0);
+  }
+
+  > *:not(:first-child) {
+    margin-top: 1em;
+  }
+
+  &__logo {
+    width: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+
+    @include for("tablet-up") {
+      width: 75%;
+    }
+  }
+
+  &__genre {
+    display: flex;
+    gap: 0.5em;
+    font-size: var(--font-size-min--2);
+
+    li:not(:first-child)::before {
+      // We aren't using list-style-type because firefox and chrome has
+      // inconsistent spacing between letter and list-style-type character
+      content: "•"; // U+2022
+      letter-spacing: 0.5em;
+      color: var(--color-accent);
+    }
+  }
+}
+
+.banner-menu {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 80%;
+  font-size: var(--font-size-min--1);
+  user-select: none;
+
+  @include for("tablet-up") {
+    justify-content: flex-start;
+    gap: 1em;
+  }
+
+  li {
+    @include for("phone-only") {
+      transition: transform 100ms ease-in-out;
+
+      &:active:hover {
+        transform: scale(0.9) translateZ(0px);
+      }
+    }
+
+    button {
+      display: flex;
+      gap: 0.5em;
+      padding: 0.5em 1em;
+      border: none;
+      background-color: transparent;
+      border-radius: $border-radius-1;
+      white-space: nowrap;
+
+      @include for("tablet-up") {
+        background-color: hsla(0, 0%, 40%, 0.7);
+        font-size: var(--font-size-0);
+        font-weight: 600;
+      }
+    }
+
+    .play-btn {
+      color: black;
+      background-color: white;
+
+      svg {
+        fill: currentColor;
+      }
+    }
+  }
+}
+
+.banner-shimmer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 60vh;
+  margin-bottom: 1.5em;
+
+  @include for("tablet-up") {
+    min-height: 90vh;
+    margin-bottom: -10vh; // to bring the slider on top of the banner
+  }
+
+  &::before {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background-image: linear-gradient(
+      to top,
+      var(--color-background),
+      rgba(0, 0, 0, 0.25) 30%
+    );
+  }
+
+  > div {
+    border-radius: 5px;
+    @include for("tablet-up") {
+      display: none;
+    }
+  }
+
+  div:nth-child(1) {
+    position: absolute;
+    bottom: 50px;
+    min-height: 50px;
+    min-width: 50%;
+  }
+
+  div:nth-child(2) {
+    position: absolute;
+    bottom: 10px;
+    min-height: 30px;
+    min-width: 60%;
+  }
+}
