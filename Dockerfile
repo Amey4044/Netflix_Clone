@@ -1,19 +1,24 @@
-# Use official Node.js image
-FROM node:18-alpine AS builder
+# Base image
+FROM node:18-alpine AS build
 
+# Set working directory
 WORKDIR /app
+
+# Copy package.json and install dependencies
 COPY package.json pnpm-lock.yaml ./
-RUN npm install
+RUN npm install -g pnpm && pnpm install
+
+# Copy the rest of the application
 COPY . .
 
-# Pass TMDB API Key as an environment variable
-ARG VITE_TMDB_API_KEY
-ENV VITE_TMDB_API_KEY=$VITE_TMDB_API_KEY
+# Build the application
+RUN pnpm run build
 
-RUN npm run build
+# Serve the application using Nginx
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Serve the app
-FROM nginx:latest
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Expose port
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
