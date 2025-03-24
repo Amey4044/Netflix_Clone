@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netflix-clone-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: netflix-clone
+  template:
+    metadata:
+      labels:
+        app: netflix-clone
+    spec:
+      containers:
+      - name: netflix-clone
+        image: cypher7/netflix-clone:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: VITE_TMDB_API
+          valueFrom:
+            secretKeyRef:
+              name: tmdb-api-secret
+              key: VITE_TMDB_API

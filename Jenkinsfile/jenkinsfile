@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = "cypher7/netflix-clone"
+        AWS_REGION = "ap-south-1"
+        EKS_CLUSTER_NAME = "netflix-clone-cluster"
+    }
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/Amey4044/netflix-clone.git'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                }
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    // Docker login using Jenkins credentials (replace 'docker-credentials' with your Jenkins ID for the credentials)
+                    withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        sh "docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
+                        sh "docker push ${DOCKER_IMAGE}:latest"
+                    }
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    // Assuming AWS credentials are stored in Jenkins
+                    withCredentials([awsCredentials(credentialsId: 'aws-credentials')]) {
+                        sh """
+                        aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
