@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: netflix-clone-deployment
+  name: netflix-clone
 spec:
   replicas: 2
   selector:
@@ -13,13 +13,20 @@ spec:
         app: netflix-clone
     spec:
       containers:
-      - name: netflix-clone
-        image: cypher7/netflix-clone:v1
-        ports:
-        - containerPort: 80
-        env:
-        - name: VITE_TMDB_API
-          valueFrom:
-            secretKeyRef:
-              name: tmdb-api-secret
-              key: VITE_TMDB_API
+        - name: netflix-clone
+          image: cypher7/netflix-clone:v1
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netflix-clone-service
+spec:
+  selector:
+    app: netflix-clone
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
