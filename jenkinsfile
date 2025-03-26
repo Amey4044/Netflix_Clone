@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_HUB_REPO = "cypher7/netflix-clone"
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/Amey4044/Netflix_Clone.git'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t $DOCKER_HUB_REPO:latest .'
+            }
+        }
+        stage('Push Image to Docker Hub') {
+            steps {
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                    sh 'docker push $DOCKER_HUB_REPO:latest'
+                }
+            }
+        }
+    }
+}
