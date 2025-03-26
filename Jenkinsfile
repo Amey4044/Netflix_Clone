@@ -2,109 +2,66 @@ pipeline {
     agent any
 
     environment {
-<<<<<<< HEAD
-        DOCKER_IMAGE = 'cypher7/netflix-clone'
-        DOCKER_TAG = 'build-${BUILD_NUMBER}'
-=======
-        DOCKER_HUB_REPO = "cypher7/netflix-clone"
-        DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
-        DOCKERFILE_PATH = "."
-        IMAGE_TAG = "build-${BUILD_NUMBER}"  // Unique tag for each build
-        
-        // Kubernetes Config
-        K8S_DEPLOYMENT_FILE = "k8s/deployment.yaml"
-        K8S_SERVICE_FILE = "k8s/service.yaml"
-        KUBECONFIG = "$HOME/.kube/config"  // Ensure Jenkins has access to this
->>>>>>> a84d9ca03e9810dc2c6056b2a6caa1001e717393
+        DOCKER_IMAGE = "amey4044/netflix-clone"
+        DOCKER_TAG = "latest"
+        KUBE_DEPLOYMENT = "netflix-clone"
+        KUBE_NAMESPACE = "default"
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
+            }
+        }
+
+        stage('Build React App') {
             steps {
                 script {
-                    echo 'Fetching latest code from GitHub...'
-                    checkout scm
+                    sh 'npm install'
+                    sh 'npm run build'
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Dockerize') {
             steps {
                 script {
-                    echo 'Building Docker image...'
-                    sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
+                    sh "docker build -t $DOCKER_IMAGE:$DOCKER_TAG ."
+                    sh "docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:$(git rev-parse --short HEAD)"
                 }
             }
         }
 
-        stage('Push Image to Docker Hub') {
+        stage('Push to Docker Hub') {
             steps {
                 script {
-                    echo 'Logging in to Docker Hub...'
-                    withDockerRegistry([credentialsId: 'dockerhub', url: '']) {
-                        sh 'docker push ${DOCKER_IMAGE}:${DOCKER_TAG}'
+                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
+                        sh "docker push $DOCKER_IMAGE:$DOCKER_TAG"
+                        sh "docker push $DOCKER_IMAGE:$(git rev-parse --short HEAD)"
                     }
                 }
             }
         }
 
-<<<<<<< HEAD
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    echo 'Deploying to Kubernetes...'
-                    sh 'kubectl set image deployment/netflix-clone netflix-clone=${DOCKER_IMAGE}:${DOCKER_TAG} --namespace=default'
-                }
-            }
-        }
-=======
-        stage('Apply Kubernetes Configurations') {
-            steps {
-                script {
-                    echo "Applying Kubernetes deployment & service..."
-                    sh "kubectl apply -f ${K8S_DEPLOYMENT_FILE}"
-                    sh "kubectl apply -f ${K8S_SERVICE_FILE}"
-                }
-            }
-        }
-
-        stage('Update Kubernetes Deployment') {
-            steps {
-                script {
-                    echo "Updating Kubernetes deployment with new image..."
-                    sh "kubectl set image deployment/netflix-clone netflix-clone=${DOCKER_HUB_REPO}:${IMAGE_TAG}"
-                    sh "kubectl rollout status deployment/netflix-clone"
-                }
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                script {
-                    echo "Verifying Kubernetes deployment..."
-                    sh "kubectl get pods"
-                    sh "kubectl get svc"
+                    sh """
+                    kubectl set image deployment/$KUBE_DEPLOYMENT netflix-app=$DOCKER_IMAGE:$DOCKER_TAG -n $KUBE_NAMESPACE
+                    kubectl rollout status deployment/$KUBE_DEPLOYMENT -n $KUBE_NAMESPACE
+                    """
                 }
             }
         }
     }
 
     post {
-        always {
-            script {
-                echo "Cleaning up local Docker images..."
-                sh "docker rmi ${DOCKER_HUB_REPO}:${IMAGE_TAG} || true"
-            }
-        }
-
         success {
-            echo "✅ Deployment successful! Access your Netflix Clone using the service URL."
-            sh "minikube service netflix-clone-service --url"
+            echo 'Deployment successful!'
         }
-
         failure {
-            echo "❌ Pipeline failed. Check logs for details."
+            echo 'Build or Deployment failed.'
         }
->>>>>>> a84d9ca03e9810dc2c6056b2a6caa1001e717393
     }
 }
