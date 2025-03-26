@@ -10,6 +10,7 @@ pipeline {
         // Kubernetes Config
         K8S_DEPLOYMENT_FILE = "k8s/deployment.yaml"
         K8S_SERVICE_FILE = "k8s/service.yaml"
+        KUBECONFIG = "$HOME/.kube/config"  // Ensure Jenkins has access to this
     }
 
     stages {
@@ -47,10 +48,20 @@ pipeline {
             }
         }
 
+        stage('Apply Kubernetes Configurations') {
+            steps {
+                script {
+                    echo "Applying Kubernetes deployment & service..."
+                    sh "kubectl apply -f ${K8S_DEPLOYMENT_FILE}"
+                    sh "kubectl apply -f ${K8S_SERVICE_FILE}"
+                }
+            }
+        }
+
         stage('Update Kubernetes Deployment') {
             steps {
                 script {
-                    echo "Updating Kubernetes deployment..."
+                    echo "Updating Kubernetes deployment with new image..."
                     sh "kubectl set image deployment/netflix-clone netflix-clone=${DOCKER_HUB_REPO}:${IMAGE_TAG}"
                     sh "kubectl rollout status deployment/netflix-clone"
                 }
@@ -77,11 +88,12 @@ pipeline {
         }
 
         success {
-            echo "Deployment successful! Access your Netflix Clone using the service URL."
+            echo "✅ Deployment successful! Access your Netflix Clone using the service URL."
+            sh "minikube service netflix-clone-service --url"
         }
 
         failure {
-            echo "Pipeline failed. Check logs for details."
+            echo "❌ Pipeline failed. Check logs for details."
         }
     }
 }
