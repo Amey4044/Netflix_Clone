@@ -2,22 +2,26 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_REPO = "cypher7/netflix-clone"   // Docker repository
-        DOCKER_CREDENTIALS_ID = "docker-hub-credentials"  // Jenkins Docker credentials ID
-        DOCKERFILE_PATH = "."   // Path to the Dockerfile
-        IMAGE_TAG = "latest"  // Image tag
+        DOCKER_HUB_REPO = "cypher7/netflix-clone"
+        DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
+        DOCKERFILE_PATH = "."
+        IMAGE_TAG = "build-${BUILD_NUMBER}"  // Unique tag for each build
         
         // Kubernetes Config
-        K8S_DEPLOYMENT_FILE = "k8s/deployment.yaml"  // Path to your Kubernetes deployment file
-        K8S_SERVICE_FILE = "k8s/service.yaml"        // Path to your Kubernetes service file
+        K8S_DEPLOYMENT_FILE = "k8s/deployment.yaml"
+        K8S_SERVICE_FILE = "k8s/service.yaml"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 script {
-                    echo "Cloning repository from GitHub..."
-                    git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
+                    echo "Fetching latest code from GitHub..."
+                    if (fileExists('.git')) {
+                        sh 'git reset --hard && git clean -df && git pull origin main'
+                    } else {
+                        git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
+                    }
                 }
             }
         }
@@ -46,9 +50,9 @@ pipeline {
         stage('Update Kubernetes Deployment') {
             steps {
                 script {
-                    echo "Updating Kubernetes deployment and service..."
-                    sh "kubectl apply -f ${K8S_DEPLOYMENT_FILE}"  // Apply deployment changes
-                    sh "kubectl apply -f ${K8S_SERVICE_FILE}"     // Apply service changes
+                    echo "Updating Kubernetes deployment..."
+                    sh "kubectl set image deployment/netflix-clone netflix-clone=${DOCKER_HUB_REPO}:${IMAGE_TAG}"
+                    sh "kubectl rollout status deployment/netflix-clone"
                 }
             }
         }
@@ -57,8 +61,8 @@ pipeline {
             steps {
                 script {
                     echo "Verifying Kubernetes deployment..."
-                    sh "kubectl get pods"    // Get pod status
-                    sh "kubectl get svc"     // Get service details
+                    sh "kubectl get pods"
+                    sh "kubectl get svc"
                 }
             }
         }
@@ -67,7 +71,7 @@ pipeline {
     post {
         always {
             script {
-                echo "Cleaning up Docker images..."
+                echo "Cleaning up local Docker images..."
                 sh "docker rmi ${DOCKER_HUB_REPO}:${IMAGE_TAG} || true"
             }
         }
@@ -77,7 +81,7 @@ pipeline {
         }
 
         failure {
-            echo "Pipeline failed. Please check the logs."
+            echo "Pipeline failed. Check logs for details."
         }
     }
 }
