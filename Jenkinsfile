@@ -4,10 +4,15 @@ pipeline {
     environment {
         // Docker Hub repository name
         DOCKER_HUB_REPO = "cypher7/netflix-clone"
+        
         // Docker Hub credentials ID (configured in Jenkins)
         DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
+        
         // Path to Dockerfile (optional: change if Dockerfile is in a subfolder)
         DOCKERFILE_PATH = "."
+
+        // Docker image tag
+        IMAGE_TAG = "latest"
     }
 
     stages {
@@ -29,7 +34,7 @@ pipeline {
                 script {
                     try {
                         // Build Docker image using the specified Dockerfile path
-                        sh "docker build -t ${DOCKER_HUB_REPO}:latest ${DOCKERFILE_PATH}"
+                        sh "docker build -t ${DOCKER_HUB_REPO}:${IMAGE_TAG} ${DOCKERFILE_PATH}"
                     } catch (Exception e) {
                         error "Docker build failed: ${e.getMessage()}"
                     }
@@ -41,9 +46,10 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Push the Docker image to Docker Hub using the credentials stored in Jenkins
+                        // Log in to Docker Hub using Jenkins credentials
                         withDockerRegistry([credentialsId: DOCKER_CREDENTIALS_ID, url: 'https://index.docker.io/v1/']) {
-                            sh "docker push ${DOCKER_HUB_REPO}:latest"
+                            // Push the Docker image to Docker Hub using the credentials stored in Jenkins
+                            sh "docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}"
                         }
                     } catch (Exception e) {
                         error "Failed to push the image to Docker Hub: ${e.getMessage()}"
@@ -58,7 +64,7 @@ pipeline {
             script {
                 // Clean up Docker images to save space
                 try {
-                    sh "docker rmi ${DOCKER_HUB_REPO}:latest || true"
+                    sh "docker rmi ${DOCKER_HUB_REPO}:${IMAGE_TAG} || true"
                 } catch (Exception e) {
                     echo "Failed to remove Docker image: ${e.getMessage()}"
                 }
