@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "amey4044/netflix-clone"
-        IMAGE_TAG = "latest"
-        DOCKER_HUB_CREDENTIALS = "docker-hub-credentials"
-        KUBECONFIG_PATH = "/home/jenkins/.kube/config"
+        DOCKER_IMAGE = "cypher7/netflix-clone"
+        DOCKER_TAG = "latest"
+        K8S_NAMESPACE = "netflix-clone"
+        DEPLOYMENT_NAME = "netflix-app"
     }
 
     stages {
@@ -21,10 +21,13 @@ pipeline {
         stage('Setup Node.js') {
             steps {
                 script {
-                    echo 'Setting up Node.js...'
+                    echo 'Setting up Node.js and npm...'
                     sh '''
+                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
                         sudo apt-get update
                         sudo apt-get install -y nodejs npm
+                        node -v
+                        npm -v
                     '''
                 }
             }
@@ -33,10 +36,8 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    echo 'Installing dependencies...'
-                    sh '''
-                        npm install
-                    '''
+                    echo 'Installing project dependencies...'
+                    sh 'npm install'
                 }
             }
         }
@@ -45,9 +46,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building the React application...'
-                    sh '''
-                        npm run build
-                    '''
+                    sh 'npm run build'
                 }
             }
         }
@@ -55,9 +54,9 @@ pipeline {
         stage('Dockerize') {
             steps {
                 script {
-                    echo 'Building Docker image...'
+                    echo 'Building the Docker image...'
                     sh '''
-                        docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                        docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
                     '''
                 }
             }
@@ -66,10 +65,11 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    echo 'Pushing Docker image to Docker Hub...'
-                    withDockerRegistry([credentialsId: DOCKER_HUB_CREDENTIALS, url: '']) {
+                    echo 'Logging in to Docker Hub and pushing the image...'
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
-                            docker push $IMAGE_NAME:$IMAGE_TAG
+                            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+                            docker push $DOCKER_IMAGE:$DOCKER_TAG
                         '''
                     }
                 }
@@ -79,10 +79,11 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    echo 'Deploying to Kubernetes...'
+                    echo 'Deploying to Kubernetes using Helm and ArgoCD...'
                     sh '''
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
+                        kubectl create namespace $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                        helm upgrade --install $DEPLOYMENT_NAME helm/netflix-chart -n $K8S_NAMESPACE \
+                        --set image.repository=$DOCKER_IMAGE --set image.tag=$DOCKER_TAG
                     '''
                 }
             }
@@ -91,10 +92,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deployment Successful!'
+            echo "✅ Deployment Successful!"
         }
         failure {
-            echo '❌ Build or Deployment Failed!'
+            echo "❌ Build or Deployment Failed!"
         }
     }
 }
