@@ -10,7 +10,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 // Cloning the GitHub repository
-                git 'https://github.com/Amey4044/Netflix_Clone.git'
+                git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
             }
         }
         
