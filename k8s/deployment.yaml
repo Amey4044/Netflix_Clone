@@ -21,4 +21,16 @@ spec:
             - containerPort: 80
           env:
             - name: VITE_TMDB_API_KEY
-              value: "e745ed749123cc3d15250957541504b9"
+              valueFrom:
+                secretKeyRef:
+                  name: tmdb-api-key-secret
+                  key: tmdb-api-key
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tmdb-api-key-secret
+type: Opaque
+data:
+  tmdb-api-key: ZTc0NWVkNzQ5MTIzY2MzZDE1MjUwOTk1NzU0MTUwNGI5  # This should be base64 encoded
