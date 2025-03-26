@@ -21,8 +21,8 @@ pipeline {
                     sh """
                     if ! command -v node &> /dev/null; then
                         echo "Node.js not found. Installing..."
-                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                        sudo apt-get install -y nodejs
+                        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+                        apt-get install -y nodejs
                     fi
                     node -v
                     npm -v
