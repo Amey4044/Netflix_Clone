@@ -2,76 +2,33 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "cypher7/netflix-clone"
-        DOCKER_TAG = "latest"
-        K8S_NAMESPACE = "netflix-clone"
-        DEPLOYMENT_NAME = "netflix-app"
+        DOCKER_IMAGE = 'cypher7/netflix-clone'
+        KUBE_CONFIG = credentials('kubeconfig-id') // Kubernetes credentials in Jenkins
+        DOCKER_CREDENTIALS = credentials('dockerhub-credentials') // DockerHub credentials in Jenkins
     }
 
     stages {
         stage('Checkout Code') {
             steps {
+                git branch: 'main', credentialsId: 'git-credentials', url: 'git@github.com:your-repo/netflix-clone.git'
+            }
+        }
+
+        stage('Install Dependencies & Build') {
+            steps {
                 script {
-                    echo 'Cloning the repository...'
-                    checkout scm
+                    sh 'pnpm install --frozen-lockfile'
+                    sh 'pnpm run build'
                 }
             }
         }
 
-        stage('Setup Node.js') {
+        stage('Docker Build & Push') {
             steps {
                 script {
-                    echo 'Setting up Node.js and npm...'
-                    sh '''
-                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                        sudo apt-get update
-                        sudo apt-get install -y nodejs npm
-                        node -v
-                        npm -v
-                    '''
-                }
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                script {
-                    echo 'Installing project dependencies...'
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Build React App') {
-            steps {
-                script {
-                    echo 'Building the React application...'
-                    sh 'npm run build'
-                }
-            }
-        }
-
-        stage('Dockerize') {
-            steps {
-                script {
-                    echo 'Building the Docker image...'
-                    sh '''
-                        docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
-                    '''
-                }
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    echo 'Logging in to Docker Hub and pushing the image...'
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh '''
-                            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
-                            docker push $DOCKER_IMAGE:$DOCKER_TAG
-                        '''
-                    }
+                    sh 'docker login -u $DOCKER_CREDENTIALS_USR -p $DOCKER_CREDENTIALS_PSW'
+                    sh 'docker build -t $DOCKER_IMAGE:latest .'
+                    sh 'docker push $DOCKER_IMAGE:latest'
                 }
             }
         }
@@ -79,12 +36,19 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    echo 'Deploying to Kubernetes using Helm and ArgoCD...'
-                    sh '''
-                        kubectl create namespace $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-                        helm upgrade --install $DEPLOYMENT_NAME helm/netflix-chart -n $K8S_NAMESPACE \
-                        --set image.repository=$DOCKER_IMAGE --set image.tag=$DOCKER_TAG
-                    '''
+                    withKubeConfig([credentialsId: 'kubeconfig-credentials']) {
+                        sh 'kubectl apply -f k8s/deployment.yaml'
+                        sh 'kubectl apply -f k8s/service.yaml'
+                        sh 'kubectl apply -f k8s/ingress.yaml'
+                    }
+                }
+            }
+        }
+
+        stage('Trigger ArgoCD Sync') {
+            steps {
+                script {
+                    sh 'argocd app sync netflix-clone'
                 }
             }
         }
@@ -92,10 +56,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment Successful!"
+            echo 'Deployment successful! ✅'
         }
         failure {
-            echo "❌ Build or Deployment Failed!"
+            echo 'Deployment failed ❌'
         }
     }
 }
