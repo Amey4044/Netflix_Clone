@@ -2,25 +2,30 @@ pipeline {
     agent any
 
     environment {
-        NODE_VERSION = "18.x"
         IMAGE_NAME = "amey4044/netflix-clone"
-        KUBE_NAMESPACE = "default"
+        IMAGE_TAG = "latest"
+        DOCKER_HUB_CREDENTIALS = "docker-hub-credentials"
+        KUBECONFIG_PATH = "/home/jenkins/.kube/config"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
+                script {
+                    echo 'Cloning the repository...'
+                    checkout scm
+                }
             }
         }
 
         stage('Setup Node.js') {
             steps {
                 script {
-                    echo "Setting up Node.js..."
-                    sh 'curl -fsSL https://deb.nodesource.com/setup_18.x | bash -'
-                    sh 'apt-get install -y nodejs'
-                    sh 'node -v'
+                    echo 'Setting up Node.js...'
+                    sh '''
+                        sudo apt-get update
+                        sudo apt-get install -y nodejs npm
+                    '''
                 }
             }
         }
@@ -28,8 +33,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    echo "Installing dependencies..."
-                    sh 'npm install'
+                    echo 'Installing dependencies...'
+                    sh '''
+                        npm install
+                    '''
                 }
             }
         }
@@ -37,8 +44,10 @@ pipeline {
         stage('Build React App') {
             steps {
                 script {
-                    echo "Building the React app..."
-                    sh 'npm run build'
+                    echo 'Building the React application...'
+                    sh '''
+                        npm run build
+                    '''
                 }
             }
         }
@@ -46,22 +55,23 @@ pipeline {
         stage('Dockerize') {
             steps {
                 script {
-                    echo "Building Docker image..."
-                    sh 'docker build -t $IMAGE_NAME:latest .'
+                    echo 'Building Docker image...'
+                    sh '''
+                        docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                    '''
                 }
             }
         }
 
         stage('Push to Docker Hub') {
-            environment {
-                DOCKER_USERNAME = credentials('docker-username')
-                DOCKER_PASSWORD = credentials('docker-password')
-            }
             steps {
                 script {
-                    echo "Logging into Docker Hub..."
-                    sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
-                    sh 'docker push $IMAGE_NAME:latest'
+                    echo 'Pushing Docker image to Docker Hub...'
+                    withDockerRegistry([credentialsId: DOCKER_HUB_CREDENTIALS, url: '']) {
+                        sh '''
+                            docker push $IMAGE_NAME:$IMAGE_TAG
+                        '''
+                    }
                 }
             }
         }
@@ -69,9 +79,11 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    echo "Deploying to Kubernetes..."
-                    sh 'kubectl apply -f k8s/deployment.yaml -n $KUBE_NAMESPACE'
-                    sh 'kubectl apply -f k8s/service.yaml -n $KUBE_NAMESPACE'
+                    echo 'Deploying to Kubernetes...'
+                    sh '''
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                    '''
                 }
             }
         }
@@ -79,7 +91,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build and Deployment Successful!'
+            echo '✅ Deployment Successful!'
         }
         failure {
             echo '❌ Build or Deployment Failed!'
