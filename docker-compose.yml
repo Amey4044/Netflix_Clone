@@ -1,8 +1,12 @@
 version: '3.8'
+
 services:
   netflix-clone:
     build: .
     ports:
-      - "3000:80"
+      - "3000:80" # Map local port 3000 to container's port 80 (Nginx)
     environment:
       - VITE_TMDB_API_KEY=e745ed749123cc3d15250957541504b9
+    # Optional: Mount local source folder for live reloading during development
+    volumes:
+      - ./src:/app/src # Mount local src folder to container (optional for development)

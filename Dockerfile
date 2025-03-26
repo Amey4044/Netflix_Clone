@@ -4,17 +4,17 @@ FROM node:20-alpine AS builder
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json before installing dependencies
-COPY package.json package-lock.json ./
+# Copy package.json and pnpm-lock.yaml before installing dependencies
+COPY package.json pnpm-lock.yaml ./
 
-# Install project dependencies
-RUN npm install
+# Install project dependencies using pnpm
+RUN npm install -g pnpm && pnpm install
 
 # Copy the rest of the project files
 COPY . .
 
 # Build the project using Vite
-RUN npm run build
+RUN pnpm run build
 
 # Step 2: Use Nginx to serve the built frontend
 FROM nginx:alpine
