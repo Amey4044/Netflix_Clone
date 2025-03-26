@@ -15,6 +15,22 @@ pipeline {
             }
         }
 
+        stage('Setup Node.js') {
+            steps {
+                script {
+                    sh """
+                    if ! command -v node &> /dev/null; then
+                        echo "Node.js not found. Installing..."
+                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                        sudo apt-get install -y nodejs
+                    fi
+                    node -v
+                    npm -v
+                    """
+                }
+            }
+        }
+
         stage('Build React App') {
             steps {
                 script {
@@ -28,8 +44,10 @@ pipeline {
             steps {
                 script {
                     def GIT_COMMIT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${GIT_COMMIT}"
+                    sh """
+                    docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                    docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:$GIT_COMMIT
+                    """
                 }
             }
         }
@@ -37,10 +55,11 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    def GIT_COMMIT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
-                        sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                        sh "docker push ${DOCKER_IMAGE}:${GIT_COMMIT}"
+                        sh """
+                        docker push $DOCKER_IMAGE:$DOCKER_TAG
+                        docker push $DOCKER_IMAGE:\$(git rev-parse --short HEAD)
+                        """
                     }
                 }
             }
@@ -49,10 +68,9 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    def GIT_COMMIT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     sh """
-                    kubectl set image deployment/${KUBE_DEPLOYMENT} netflix-app=${DOCKER_IMAGE}:${GIT_COMMIT} -n ${KUBE_NAMESPACE}
-                    kubectl rollout status deployment/${KUBE_DEPLOYMENT} -n ${KUBE_NAMESPACE}
+                    kubectl set image deployment/$KUBE_DEPLOYMENT netflix-app=$DOCKER_IMAGE:$DOCKER_TAG -n $KUBE_NAMESPACE
+                    kubectl rollout status deployment/$KUBE_DEPLOYMENT -n $KUBE_NAMESPACE
                     """
                 }
             }
