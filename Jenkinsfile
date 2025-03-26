@@ -10,7 +10,7 @@ pipeline {
         
         // Path to Dockerfile (optional: change if Dockerfile is in a subfolder)
         DOCKERFILE_PATH = "."
-
+        
         // Docker image tag
         IMAGE_TAG = "latest"
     }
@@ -21,6 +21,7 @@ pipeline {
                 script {
                     try {
                         // Clone the GitHub repository
+                        echo "Cloning repository..."
                         git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
                     } catch (Exception e) {
                         error "Failed to clone the repository: ${e.getMessage()}"
@@ -34,6 +35,7 @@ pipeline {
                 script {
                     try {
                         // Build Docker image using the specified Dockerfile path
+                        echo "Building Docker image..."
                         sh "docker build -t ${DOCKER_HUB_REPO}:${IMAGE_TAG} ${DOCKERFILE_PATH}"
                     } catch (Exception e) {
                         error "Docker build failed: ${e.getMessage()}"
@@ -47,8 +49,10 @@ pipeline {
                 script {
                     try {
                         // Log in to Docker Hub using Jenkins credentials
+                        echo "Logging in to Docker Hub..."
                         withDockerRegistry([credentialsId: DOCKER_CREDENTIALS_ID, url: 'https://index.docker.io/v1/']) {
                             // Push the Docker image to Docker Hub using the credentials stored in Jenkins
+                            echo "Pushing Docker image to Docker Hub..."
                             sh "docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}"
                         }
                     } catch (Exception e) {
@@ -64,6 +68,7 @@ pipeline {
             script {
                 // Clean up Docker images to save space
                 try {
+                    echo "Cleaning up Docker images..."
                     sh "docker rmi ${DOCKER_HUB_REPO}:${IMAGE_TAG} || true"
                 } catch (Exception e) {
                     echo "Failed to remove Docker image: ${e.getMessage()}"
