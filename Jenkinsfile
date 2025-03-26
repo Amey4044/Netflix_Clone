@@ -2,30 +2,22 @@ pipeline {
     agent any
 
     environment {
-        // Docker Hub repository name
         DOCKER_HUB_REPO = "cypher7/netflix-clone"
-        
-        // Docker Hub credentials ID (configured in Jenkins)
         DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
-        
-        // Path to Dockerfile (optional: change if Dockerfile is in a subfolder)
         DOCKERFILE_PATH = "."
-        
-        // Docker image tag
         IMAGE_TAG = "latest"
+        
+        // Kubernetes Config
+        K8S_DEPLOYMENT_FILE = "k8s/deployment.yaml"
+        K8S_SERVICE_FILE = "k8s/service.yaml"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 script {
-                    try {
-                        // Clone the GitHub repository
-                        echo "Cloning repository..."
-                        git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
-                    } catch (Exception e) {
-                        error "Failed to clone the repository: ${e.getMessage()}"
-                    }
+                    echo "Cloning repository..."
+                    git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
                 }
             }
         }
@@ -33,13 +25,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    try {
-                        // Build Docker image using the specified Dockerfile path
-                        echo "Building Docker image..."
-                        sh "docker build -t ${DOCKER_HUB_REPO}:${IMAGE_TAG} ${DOCKERFILE_PATH}"
-                    } catch (Exception e) {
-                        error "Docker build failed: ${e.getMessage()}"
-                    }
+                    echo "Building Docker image..."
+                    sh "docker build -t ${DOCKER_HUB_REPO}:${IMAGE_TAG} ${DOCKERFILE_PATH}"
                 }
             }
         }
@@ -47,17 +34,32 @@ pipeline {
         stage('Push Image to Docker Hub') {
             steps {
                 script {
-                    try {
-                        // Log in to Docker Hub using Jenkins credentials
-                        echo "Logging in to Docker Hub..."
-                        withDockerRegistry([credentialsId: DOCKER_CREDENTIALS_ID, url: 'https://index.docker.io/v1/']) {
-                            // Push the Docker image to Docker Hub using the credentials stored in Jenkins
-                            echo "Pushing Docker image to Docker Hub..."
-                            sh "docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}"
-                        }
-                    } catch (Exception e) {
-                        error "Failed to push the image to Docker Hub: ${e.getMessage()}"
+                    echo "Logging in to Docker Hub..."
+                    withDockerRegistry([credentialsId: DOCKER_CREDENTIALS_ID, url: 'https://index.docker.io/v1/']) {
+                        echo "Pushing Docker image to Docker Hub..."
+                        sh "docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}"
                     }
+                }
+            }
+        }
+
+        stage('Update Kubernetes Deployment') {
+            steps {
+                script {
+                    echo "Applying Kubernetes configurations..."
+                    sh "kubectl apply -f ${K8S_DEPLOYMENT_FILE}"
+                    sh "kubectl apply -f ${K8S_SERVICE_FILE}"
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    echo "Checking pod status..."
+                    sh "kubectl get pods"
+                    echo "Fetching service details..."
+                    sh "kubectl get svc"
                 }
             }
         }
@@ -66,22 +68,17 @@ pipeline {
     post {
         always {
             script {
-                // Clean up Docker images to save space
-                try {
-                    echo "Cleaning up Docker images..."
-                    sh "docker rmi ${DOCKER_HUB_REPO}:${IMAGE_TAG} || true"
-                } catch (Exception e) {
-                    echo "Failed to remove Docker image: ${e.getMessage()}"
-                }
+                echo "Cleaning up Docker images..."
+                sh "docker rmi ${DOCKER_HUB_REPO}:${IMAGE_TAG} || true"
             }
         }
 
         success {
-            echo "Docker image successfully pushed to Docker Hub!"
+            echo "Deployment successful! Access your Netflix Clone using the service URL."
         }
 
         failure {
-            echo "The pipeline failed. Please check the logs for details."
+            echo "Pipeline failed. Please check logs."
         }
     }
 }
