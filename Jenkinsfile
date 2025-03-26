@@ -2,21 +2,21 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_REPO = "cypher7/netflix-clone"
-        DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
-        DOCKERFILE_PATH = "."
-        IMAGE_TAG = "latest"
+        DOCKER_HUB_REPO = "cypher7/netflix-clone"   // Docker repository
+        DOCKER_CREDENTIALS_ID = "docker-hub-credentials"  // Jenkins Docker credentials ID
+        DOCKERFILE_PATH = "."   // Path to the Dockerfile
+        IMAGE_TAG = "latest"  // Image tag
         
         // Kubernetes Config
-        K8S_DEPLOYMENT_FILE = "k8s/deployment.yaml"
-        K8S_SERVICE_FILE = "k8s/service.yaml"
+        K8S_DEPLOYMENT_FILE = "k8s/deployment.yaml"  // Path to your Kubernetes deployment file
+        K8S_SERVICE_FILE = "k8s/service.yaml"        // Path to your Kubernetes service file
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 script {
-                    echo "Cloning repository..."
+                    echo "Cloning repository from GitHub..."
                     git branch: 'main', url: 'https://github.com/Amey4044/Netflix_Clone.git'
                 }
             }
@@ -46,9 +46,9 @@ pipeline {
         stage('Update Kubernetes Deployment') {
             steps {
                 script {
-                    echo "Applying Kubernetes configurations..."
-                    sh "kubectl apply -f ${K8S_DEPLOYMENT_FILE}"
-                    sh "kubectl apply -f ${K8S_SERVICE_FILE}"
+                    echo "Updating Kubernetes deployment and service..."
+                    sh "kubectl apply -f ${K8S_DEPLOYMENT_FILE}"  // Apply deployment changes
+                    sh "kubectl apply -f ${K8S_SERVICE_FILE}"     // Apply service changes
                 }
             }
         }
@@ -56,10 +56,9 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 script {
-                    echo "Checking pod status..."
-                    sh "kubectl get pods"
-                    echo "Fetching service details..."
-                    sh "kubectl get svc"
+                    echo "Verifying Kubernetes deployment..."
+                    sh "kubectl get pods"    // Get pod status
+                    sh "kubectl get svc"     // Get service details
                 }
             }
         }
@@ -78,7 +77,7 @@ pipeline {
         }
 
         failure {
-            echo "Pipeline failed. Please check logs."
+            echo "Pipeline failed. Please check the logs."
         }
     }
 }
