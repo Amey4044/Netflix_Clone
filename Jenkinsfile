@@ -10,6 +10,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
+                // Ensure the git repository URL matches the correct URL for your repo
                 git branch: 'main', credentialsId: 'git-credentials', url: 'git@github.com:your-repo/netflix-clone.git'
             }
         }
@@ -17,6 +18,7 @@ pipeline {
         stage('Install Dependencies & Build') {
             steps {
                 script {
+                    // Ensure pnpm is installed, if not, install it before running commands
                     sh 'pnpm install --frozen-lockfile'
                     sh 'pnpm run build'
                 }
@@ -26,7 +28,8 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    sh 'docker login -u $DOCKER_CREDENTIALS_USR -p $DOCKER_CREDENTIALS_PSW'
+                    // Correct use of credentials environment variables for Docker login
+                    sh 'echo $DOCKER_CREDENTIALS_PASSWORD | docker login -u $DOCKER_CREDENTIALS_USERNAME --password-stdin'
                     sh 'docker build -t $DOCKER_IMAGE:latest .'
                     sh 'docker push $DOCKER_IMAGE:latest'
                 }
@@ -36,7 +39,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    withKubeConfig([credentialsId: 'kubeconfig-credentials']) {
+                    // Use the correct kubeconfig credentials in the withKubeConfig block
+                    withKubeConfig([credentialsId: 'kubeconfig-id']) {
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         sh 'kubectl apply -f k8s/service.yaml'
                         sh 'kubectl apply -f k8s/ingress.yaml'
@@ -48,6 +52,7 @@ pipeline {
         stage('Trigger ArgoCD Sync') {
             steps {
                 script {
+                    // Trigger ArgoCD synchronization for the app
                     sh 'argocd app sync netflix-clone'
                 }
             }
