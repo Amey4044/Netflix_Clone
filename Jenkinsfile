@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 // Ensure the git repository URL matches the correct URL for your repo
-                git branch: 'main', credentialsId: 'git-credentials', url: 'git@github.com:your-repo/netflix-clone.git'
+                git branch: 'main', credentialsId: 'git-credentials', url: 'https://github.com/Amey4044/Netflix_Clone.git'
             }
         }
 
@@ -43,7 +43,6 @@ pipeline {
                     withKubeConfig([credentialsId: 'kubeconfig-id']) {
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         sh 'kubectl apply -f k8s/service.yaml'
-                        sh 'kubectl apply -f k8s/ingress.yaml'
                     }
                 }
             }
