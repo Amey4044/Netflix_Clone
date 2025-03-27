@@ -1,4 +1,4 @@
 node_modules
-dist
+.env
 .git
-Dockerfile
+.DS_Store
