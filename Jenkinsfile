@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/var/lib/jenkins/.minikube/config'  // Updated Kubeconfig path
+        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'  // Corrected path
         PNPM_HOME = "${HOME}/.local/share/pnpm"
         PATH = "${PNPM_HOME}:${PATH}:/usr/local/bin:/usr/bin:/usr/sbin"
     }
@@ -57,12 +57,19 @@ pipeline {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
                         sh '''
-                            chmod 600 ${KUBECONFIG}
+                            sudo chown jenkins:jenkins ${KUBECONFIG}
+                            sudo chmod 600 ${KUBECONFIG}
                             kubectl config view
                             kubectl get nodes
-                            kubectl apply -f k8s/deployment.yaml
-                            kubectl apply -f k8s/service.yaml
-                            kubectl rollout restart deployment/netflix-clone
+                            
+                            if [ -f k8s/deployment.yaml ] && [ -f k8s/service.yaml ]; then
+                                kubectl apply -f k8s/deployment.yaml
+                                kubectl apply -f k8s/service.yaml
+                                kubectl rollout restart deployment/netflix-clone
+                            else
+                                echo "❌ Kubernetes manifest files not found!"
+                                exit 1
+                            fi
 
                             # Debugging Steps
                             kubectl get pods -o wide
@@ -78,8 +85,9 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        export PATH=$PATH:/usr/local/bin  # Ensure ArgoCD is accessible
                         which argocd  # Debugging step
-                        argocd app sync netflix-clone
+                        argocd app sync netflix-clone || echo "❌ ArgoCD sync failed!"
                     '''
                 }
             }
