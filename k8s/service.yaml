@@ -3,11 +3,10 @@ kind: Service
 metadata:
   name: netflix-clone-service
 spec:
-  type: NodePort
   selector:
-    app: netflix-clone
+    app: backend
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 80
-      nodePort: 30008
+      targetPort: 5000
+  type: LoadBalancer  # Change this from NodePort
