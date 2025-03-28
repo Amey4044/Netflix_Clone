@@ -24,8 +24,8 @@ pipeline {
                         export PATH="$PNPM_HOME:$PATH"
                         echo "export PNPM_HOME=$HOME/.local/share/pnpm" >> $HOME/.bashrc
                         echo "export PATH=$PNPM_HOME:$PATH" >> $HOME/.bashrc
-                        source $HOME/.bashrc
-                        pnpm --version
+                        . $HOME/.bashrc  # Fixed: Using dot instead of source
+                        pnpm --version  # Verify installation
                     '''
                 }
             }
@@ -34,8 +34,12 @@ pipeline {
         stage('Install Dependencies & Build') {
             steps {
                 script {
-                    sh 'pnpm install --frozen-lockfile'
-                    sh 'pnpm run build'
+                    sh '''
+                        export PNPM_HOME="$HOME/.local/share/pnpm"
+                        export PATH="$PNPM_HOME:$PATH"
+                        pnpm install --frozen-lockfile
+                        pnpm run build
+                    '''
                 }
             }
         }
@@ -43,9 +47,11 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    sh 'docker login -u $DOCKER_CREDENTIALS_USR -p $DOCKER_CREDENTIALS_PSW'
-                    sh 'docker build -t $DOCKER_IMAGE:latest .'
-                    sh 'docker push $DOCKER_IMAGE:latest'
+                    sh '''
+                        echo "$DOCKER_CREDENTIALS_PSW" | docker login -u "$DOCKER_CREDENTIALS_USR" --password-stdin
+                        docker build -t $DOCKER_IMAGE:latest .
+                        docker push $DOCKER_IMAGE:latest
+                    '''
                 }
             }
         }
@@ -54,9 +60,11 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig-id']) {
-                        sh 'kubectl set env deployment/netflix-clone VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY}'
-                        sh 'kubectl apply -f k8s/deployment.yaml'
-                        sh 'kubectl apply -f k8s/service.yaml'
+                        sh '''
+                            kubectl set env deployment/netflix-clone VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY}
+                            kubectl apply -f k8s/deployment.yaml
+                            kubectl apply -f k8s/service.yaml
+                        '''
                     }
                 }
             }
