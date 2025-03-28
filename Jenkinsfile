@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/var/lib/jenkins/kubeconfig'
-        DOCKER_CREDENTIALS = credentials('dockerhub-credentials')
-        VITE_TMDB_API_KEY = credentials('tmdb-api-key')
+        KUBECONFIG_PATH = '/var/lib/jenkins/.minikube/config'  // Updated Kubeconfig path
+        PNPM_HOME = "${HOME}/.local/share/pnpm"
+        PATH = "${PNPM_HOME}:${PATH}:/usr/local/bin:/usr/bin:/usr/sbin"
     }
 
     stages {
@@ -20,11 +20,8 @@ pipeline {
                 script {
                     sh '''
                         curl -fsSL https://get.pnpm.io/install.sh | sh -
-                        export PNPM_HOME="$HOME/.local/share/pnpm"
-                        export PATH="$PNPM_HOME:$PATH"
-                        echo "export PNPM_HOME=$HOME/.local/share/pnpm" >> $HOME/.bashrc
-                        echo "export PATH=$PNPM_HOME:$PATH" >> $HOME/.bashrc
-                        bash -c "source $HOME/.bashrc && pnpm --version"
+                        echo "PNPM installed successfully!"
+                        pnpm --version
                     '''
                 }
             }
@@ -34,10 +31,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        export PNPM_HOME="$HOME/.local/share/pnpm"
-                        export PATH="$PNPM_HOME:$PATH"
-                        bash -c "pnpm install --frozen-lockfile"
-                        bash -c "pnpm run build"
+                        pnpm install --frozen-lockfile
+                        pnpm run build
                     '''
                 }
             }
@@ -68,6 +63,11 @@ pipeline {
                             kubectl apply -f k8s/deployment.yaml
                             kubectl apply -f k8s/service.yaml
                             kubectl rollout restart deployment/netflix-clone
+
+                            # Debugging Steps
+                            kubectl get pods -o wide
+                            kubectl logs -l app=netflix-clone --tail=50
+                            kubectl get svc netflix-clone -o yaml
                         '''
                     }
                 }
@@ -78,7 +78,6 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        export PATH=$PATH:/usr/local/bin
                         which argocd  # Debugging step
                         argocd app sync netflix-clone
                     '''
