@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/var/lib/jenkins/kubeconfig' // Updated to ensure Jenkins can access
-        DOCKER_CREDENTIALS = credentials('dockerhub-credentials') // DockerHub credentials
-        VITE_TMDB_API_KEY = credentials('tmdb-api-key') // TMDB API Key from Jenkins credentials
+        KUBECONFIG_PATH = '/var/lib/jenkins/kubeconfig'
+        DOCKER_CREDENTIALS = credentials('dockerhub-credentials')
+        VITE_TMDB_API_KEY = credentials('tmdb-api-key')
     }
 
     stages {
@@ -24,8 +24,7 @@ pipeline {
                         export PATH="$PNPM_HOME:$PATH"
                         echo "export PNPM_HOME=$HOME/.local/share/pnpm" >> $HOME/.bashrc
                         echo "export PATH=$PNPM_HOME:$PATH" >> $HOME/.bashrc
-                        source $HOME/.bashrc  # Source the updated bashrc
-                        pnpm --version  # Verify installation
+                        bash -c "source $HOME/.bashrc && pnpm --version"
                     '''
                 }
             }
@@ -37,8 +36,8 @@ pipeline {
                     sh '''
                         export PNPM_HOME="$HOME/.local/share/pnpm"
                         export PATH="$PNPM_HOME:$PATH"
-                        pnpm install --frozen-lockfile
-                        pnpm run build
+                        bash -c "pnpm install --frozen-lockfile"
+                        bash -c "pnpm run build"
                     '''
                 }
             }
@@ -47,11 +46,13 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    sh '''
-                        echo "$DOCKER_CREDENTIALS_PSW" | docker login -u "$DOCKER_CREDENTIALS_USR" --password-stdin
-                        docker build -t $DOCKER_IMAGE:latest .
-                        docker push $DOCKER_IMAGE:latest
-                    '''
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh '''
+                            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                            docker build -t $DOCKER_IMAGE:latest .
+                            docker push $DOCKER_IMAGE:latest
+                        '''
+                    }
                 }
             }
         }
@@ -59,14 +60,14 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) { // Use correct KubeConfig path
+                    withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
                         sh '''
-                            chmod 600 ${KUBECONFIG} # Ensure correct permissions
+                            chmod 600 ${KUBECONFIG}
                             kubectl config view
                             kubectl get nodes
-                            kubectl set env deployment/netflix-clone VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY}
                             kubectl apply -f k8s/deployment.yaml
                             kubectl apply -f k8s/service.yaml
+                            kubectl rollout restart deployment/netflix-clone
                         '''
                     }
                 }
@@ -76,7 +77,11 @@ pipeline {
         stage('Trigger ArgoCD Sync') {
             steps {
                 script {
-                    sh 'argocd app sync netflix-clone'
+                    sh '''
+                        export PATH=$PATH:/usr/local/bin
+                        which argocd  # Debugging step
+                        argocd app sync netflix-clone
+                    '''
                 }
             }
         }
