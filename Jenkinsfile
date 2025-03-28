@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/home/cypher/.kube/config' // Absolute path to KubeConfig
+        KUBECONFIG_PATH = '/home/cypher/kubeconfig' // Absolute path to KubeConfig
         DOCKER_CREDENTIALS = credentials('dockerhub-credentials') // DockerHub credentials in Jenkins
         VITE_TMDB_API_KEY = credentials('tmdb-api-key') // TMDB API Key from Jenkins credentials
     }
