@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config' // Corrected path
+        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config' // Path to Kubeconfig
         PNPM_HOME = "${HOME}/.local/share/pnpm"
         PATH = "${PNPM_HOME}:${PATH}:/usr/local/bin:/usr/bin:/usr/sbin"
     }
@@ -61,7 +61,7 @@ pipeline {
                             sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
                             sudo chmod -R 700 /var/lib/jenkins/.kube
 
-                            # Set Kubernetes context
+                            # Switch to the correct Kubernetes context
                             kubectl config use-context minikube
 
                             # Deploy to Kubernetes
