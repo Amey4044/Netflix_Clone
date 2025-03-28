@@ -19,6 +19,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        set -e
                         curl -fsSL https://get.pnpm.io/install.sh | sh -
                         echo "PNPM installed successfully!"
                         pnpm --version
@@ -31,6 +32,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        set -e
                         pnpm install --frozen-lockfile
                         pnpm run build
                     '''
@@ -43,6 +45,7 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh '''
+                            set -e
                             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                             docker build -t $DOCKER_IMAGE:latest .
                             docker push $DOCKER_IMAGE:latest
@@ -57,15 +60,17 @@ pipeline {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
                         sh '''
+                            set -e
                             sudo chown jenkins:jenkins ${KUBECONFIG}
                             sudo chmod 600 ${KUBECONFIG}
                             kubectl config view
                             kubectl get nodes
-                            
+
                             if [ -f k8s/deployment.yaml ] && [ -f k8s/service.yaml ]; then
                                 kubectl apply -f k8s/deployment.yaml
                                 kubectl apply -f k8s/service.yaml
                                 kubectl rollout restart deployment/netflix-clone
+                                kubectl rollout status deployment/netflix-clone
                             else
                                 echo "❌ Kubernetes manifest files not found!"
                                 exit 1
@@ -77,18 +82,6 @@ pipeline {
                             kubectl get svc netflix-clone -o yaml
                         '''
                     }
-                }
-            }
-        }
-
-        stage('Trigger ArgoCD Sync') {
-            steps {
-                script {
-                    sh '''
-                        export PATH=$PATH:/usr/local/bin  # Ensure ArgoCD is accessible
-                        which argocd  # Debugging step
-                        argocd app sync netflix-clone || echo "❌ ArgoCD sync failed!"
-                    '''
                 }
             }
         }
