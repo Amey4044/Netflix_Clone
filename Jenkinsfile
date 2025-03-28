@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBE_CONFIG = credentials('kubeconfig-id') // Kubernetes credentials in Jenkins
+        KUBECONFIG_PATH = '/home/cypher/.kube/config' // Absolute path to KubeConfig
         DOCKER_CREDENTIALS = credentials('dockerhub-credentials') // DockerHub credentials in Jenkins
-        VITE_TMDB_API_KEY = credentials('tmdb-api-key') // Add this in Jenkins credentials
+        VITE_TMDB_API_KEY = credentials('tmdb-api-key') // TMDB API Key from Jenkins credentials
     }
 
     stages {
@@ -24,7 +24,7 @@ pipeline {
                         export PATH="$PNPM_HOME:$PATH"
                         echo "export PNPM_HOME=$HOME/.local/share/pnpm" >> $HOME/.bashrc
                         echo "export PATH=$PNPM_HOME:$PATH" >> $HOME/.bashrc
-                        . $HOME/.bashrc  # Fixed: Using dot instead of source
+                        . $HOME/.bashrc  # Source the updated bashrc
                         pnpm --version  # Verify installation
                     '''
                 }
@@ -59,8 +59,10 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    withKubeConfig([credentialsId: 'kubeconfig-id']) {
+                    withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) { // Use absolute KubeConfig path
                         sh '''
+                            kubectl config view
+                            kubectl get nodes
                             kubectl set env deployment/netflix-clone VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY}
                             kubectl apply -f k8s/deployment.yaml
                             kubectl apply -f k8s/service.yaml
@@ -81,10 +83,10 @@ pipeline {
 
     post {
         success {
-            echo 'Deployment successful! ✅'
+            echo '🚀 Deployment successful! ✅'
         }
         failure {
-            echo 'Deployment failed ❌'
+            echo '❌ Deployment failed. Check logs for details.'
         }
     }
 }
