@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'  // Corrected path
+        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config' // Corrected path
         PNPM_HOME = "${HOME}/.local/share/pnpm"
         PATH = "${PNPM_HOME}:${PATH}:/usr/local/bin:/usr/bin:/usr/sbin"
     }
@@ -19,7 +19,6 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        set -e
                         curl -fsSL https://get.pnpm.io/install.sh | sh -
                         echo "PNPM installed successfully!"
                         pnpm --version
@@ -32,7 +31,6 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        set -e
                         pnpm install --frozen-lockfile
                         pnpm run build
                     '''
@@ -45,7 +43,6 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh '''
-                            set -e
                             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                             docker build -t $DOCKER_IMAGE:latest .
                             docker push $DOCKER_IMAGE:latest
@@ -60,12 +57,14 @@ pipeline {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
                         sh '''
-                            set -e
-                            sudo chown jenkins:jenkins ${KUBECONFIG}
-                            sudo chmod 600 ${KUBECONFIG}
-                            kubectl config view
-                            kubectl get nodes
+                            # Adjust permissions for Kubeconfig
+                            sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
+                            sudo chmod -R 700 /var/lib/jenkins/.kube
 
+                            # Set Kubernetes context
+                            kubectl config use-context minikube
+
+                            # Deploy to Kubernetes
                             if [ -f k8s/deployment.yaml ] && [ -f k8s/service.yaml ]; then
                                 kubectl apply -f k8s/deployment.yaml
                                 kubectl apply -f k8s/service.yaml
