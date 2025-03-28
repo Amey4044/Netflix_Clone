@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/home/cypher/kubeconfig' // Absolute path to KubeConfig
-        DOCKER_CREDENTIALS = credentials('dockerhub-credentials') // DockerHub credentials in Jenkins
+        KUBECONFIG_PATH = '/var/lib/jenkins/kubeconfig' // Updated to ensure Jenkins can access
+        DOCKER_CREDENTIALS = credentials('dockerhub-credentials') // DockerHub credentials
         VITE_TMDB_API_KEY = credentials('tmdb-api-key') // TMDB API Key from Jenkins credentials
     }
 
@@ -24,7 +24,7 @@ pipeline {
                         export PATH="$PNPM_HOME:$PATH"
                         echo "export PNPM_HOME=$HOME/.local/share/pnpm" >> $HOME/.bashrc
                         echo "export PATH=$PNPM_HOME:$PATH" >> $HOME/.bashrc
-                        . $HOME/.bashrc  # Source the updated bashrc
+                        source $HOME/.bashrc  # Source the updated bashrc
                         pnpm --version  # Verify installation
                     '''
                 }
@@ -59,8 +59,9 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) { // Use absolute KubeConfig path
+                    withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) { // Use correct KubeConfig path
                         sh '''
+                            chmod 600 ${KUBECONFIG} # Ensure correct permissions
                             kubectl config view
                             kubectl get nodes
                             kubectl set env deployment/netflix-clone VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY}
