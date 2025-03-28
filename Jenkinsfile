@@ -18,8 +18,15 @@ pipeline {
         stage('Install pnpm') {
             steps {
                 script {
-                    sh 'npm install --prefix=$HOME/.local pnpm'
-                    sh 'export PATH=$HOME/.local/bin:$PATH'
+                    sh '''
+                        curl -fsSL https://get.pnpm.io/install.sh | sh -
+                        export PNPM_HOME="$HOME/.local/share/pnpm"
+                        export PATH="$PNPM_HOME:$PATH"
+                        echo "export PNPM_HOME=$HOME/.local/share/pnpm" >> $HOME/.bashrc
+                        echo "export PATH=$PNPM_HOME:$PATH" >> $HOME/.bashrc
+                        source $HOME/.bashrc
+                        pnpm --version
+                    '''
                 }
             }
         }
