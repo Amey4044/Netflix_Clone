@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: netflix-clone
-  labels:
-    app: netflix-clone
 spec:
   replicas: 2
   selector:
@@ -15,22 +13,13 @@ spec:
         app: netflix-clone
     spec:
       containers:
-        - name: netflix-clone
-          image: cypher7/netflix-clone:v1
-          ports:
-            - containerPort: 80
-          env:
-            - name: VITE_TMDB_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: tmdb-api-key-secret
-                  key: tmdb-api-key
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: tmdb-api-key-secret
-type: Opaque
-data:
-  tmdb-api-key: ZTc0NWVkNzQ5MTIzY2MzZDE1MjUwOTk1NzU0MTUwNGI5  # This should be base64 encoded
+      - name: netflix-clone
+        image: cypher7/netflix-clone:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: VITE_TMDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: netflix-secrets
+              key: VITE_TMDB_API_KEY

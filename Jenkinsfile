@@ -5,6 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
         KUBE_CONFIG = credentials('kubeconfig-id') // Kubernetes credentials in Jenkins
         DOCKER_CREDENTIALS = credentials('dockerhub-credentials') // DockerHub credentials in Jenkins
+        VITE_TMDB_API_KEY = credentials('tmdb-api-key') // Add this in Jenkins credentials
     }
 
     stages {
@@ -17,8 +18,8 @@ pipeline {
         stage('Install pnpm') {
             steps {
                 script {
-                    // Install pnpm if it's not available
-                    sh 'npm install -g pnpm'
+                    sh 'npm install --prefix=$HOME/.local pnpm'
+                    sh 'export PATH=$HOME/.local/bin:$PATH'
                 }
             }
         }
@@ -26,8 +27,8 @@ pipeline {
         stage('Install Dependencies & Build') {
             steps {
                 script {
-                    sh 'pnpm install --frozen-lockfile'  // Install dependencies using pnpm
-                    sh 'pnpm run build'  // Run build using pnpm
+                    sh 'pnpm install --frozen-lockfile'
+                    sh 'pnpm run build'
                 }
             }
         }
@@ -35,7 +36,6 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    // Log in to DockerHub and push the image
                     sh 'docker login -u $DOCKER_CREDENTIALS_USR -p $DOCKER_CREDENTIALS_PSW'
                     sh 'docker build -t $DOCKER_IMAGE:latest .'
                     sh 'docker push $DOCKER_IMAGE:latest'
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig-id']) {
-                        // Apply Kubernetes manifests
+                        sh 'kubectl set env deployment/netflix-clone VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY}'
                         sh 'kubectl apply -f k8s/deployment.yaml'
                         sh 'kubectl apply -f k8s/service.yaml'
                     }
@@ -58,7 +58,6 @@ pipeline {
         stage('Trigger ArgoCD Sync') {
             steps {
                 script {
-                    // Sync application with ArgoCD
                     sh 'argocd app sync netflix-clone'
                 }
             }
