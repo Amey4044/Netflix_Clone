@@ -7,7 +7,7 @@ services:
       - "8081:80" # Maps container's port 8080 to host's port 8080
     environment:
       - NODE_ENV=production
-      - VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY} # Use the value from the .env file
+      - VITE_TMDB_API=${VITE_TMDB_API} # Use the value from the .env file
     volumes:
       - ./src:/app/src
       - ./public:/app/public
