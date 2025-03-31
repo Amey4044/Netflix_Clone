@@ -18,12 +18,12 @@ pipeline {
         stage('Install pnpm') {
             steps {
                 script {
-                    sh '''
+                    sh '''#!/bin/bash
                         curl -fsSL https://get.pnpm.io/install.sh | sh -
                         echo "export PATH=/var/lib/jenkins/.local/share/pnpm:$PATH" >> ~/.bashrc
                         echo "export PATH=/var/lib/jenkins/.local/share/pnpm:$PATH" >> ~/.profile
-                        source ~/.bashrc
-                        source ~/.profile
+                        . ~/.bashrc
+                        . ~/.profile
                         echo "PNPM installed successfully!"
                         pnpm --version
                     '''
@@ -34,7 +34,7 @@ pipeline {
         stage('Install Dependencies & Build') {
             steps {
                 script {
-                    sh '''
+                    sh '''#!/bin/bash
                         export PATH="/var/lib/jenkins/.local/share/pnpm:$PATH"
                         which pnpm
                         pnpm install --frozen-lockfile
@@ -48,7 +48,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                             docker build -t $DOCKER_IMAGE:latest .
                             docker push $DOCKER_IMAGE:latest
@@ -62,7 +62,7 @@ pipeline {
             steps {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
-                        sh '''
+                        sh '''#!/bin/bash
                             sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
                             sudo chmod -R 700 /var/lib/jenkins/.kube
 
