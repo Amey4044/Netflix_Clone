@@ -35,9 +35,8 @@ export class TMDB {
     endpoint: string,
     options: MakeRequestOptions = {}
   ): Promise<T> {
-    let baseURL = `https://api.themoviedb.org/3/${endpoint}?api_key=${
-      this.#api_key
-    }`;
+    let baseURL = `https://api.themoviedb.org/3/${endpoint}?api_key=${this.#api_key
+      }`;
 
     const { query, init } = options;
 
@@ -178,4 +177,4 @@ export class TMDB {
   }
 }
 
-export const api = new TMDB(import.meta.env.VITE_TMDB_API);
+export const api = new TMDB(import.meta.env.VITE_TMDB_API_KEY);

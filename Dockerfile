@@ -1,33 +1,28 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18 AS build
+# Stage 1: Build the app
+FROM node:18 as build
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and pnpm-lock.yaml first to leverage Docker cache
+# Copy package.json and pnpm-lock.yaml for dependency installation
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
+# Install dependencies using pnpm
 RUN npm install -g pnpm
 RUN pnpm install
 
-# Copy the rest of the application files
+# Copy the rest of the app code
 COPY . .
 
-# Copy .env file to the container (ensure you have your .env file in the root)
-COPY .env .env
-
-# Build the application
+# Build the app
 RUN pnpm run build
 
-# Use a smaller image to run the app
+# Stage 2: Serve the app using Nginx
 FROM nginx:alpine
 
-# Copy the build from the build image
+# Copy the build output from the first stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Expose port 8080
-EXPOSE 8081
+# Expose port 80
+EXPOSE 80
 
-# Start nginx server
 CMD ["nginx", "-g", "daemon off;"]
