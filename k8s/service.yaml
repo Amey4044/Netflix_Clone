@@ -4,7 +4,7 @@ metadata:
   name: netflix-clone-service
 spec:
   selector:
-    app: backend
+    app: netflix-clone
   ports:
     - protocol: TCP
       port: 80
