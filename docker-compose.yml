@@ -1,12 +1,23 @@
-version: '3.8'
+version: '3.7'
 
 services:
-  netflix-clone:
-    build: .
-    ports:
-      - "3000:80" # Map local port 3000 to container's port 80 (Nginx)
+  app:
+    image: node:18-alpine
+    container_name: netflix-clone-app
     environment:
-      - VITE_TMDB_API_KEY=e745ed749123cc3d15250957541504b9
-    # Optional: Mount local source folder for live reloading during development
+      - VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY} # Pass your TMDB API key from the .env file
     volumes:
-      - ./src:/app/src # Mount local src folder to container (optional for development)
+      - ./src:/usr/src/app/src # Mount the src directory
+      - ./public:/usr/src/app/public # Mount the public directory
+      - ./package.json:/usr/src/app/package.json # Mount package.json for npm install
+      - ./pnpm-lock.yaml:/usr/src/app/pnpm-lock.yaml # Mount lock file if you're using pnpm
+      - ./tsconfig.json:/usr/src/app/tsconfig.json # Mount tsconfig.json for the typescript config
+      - ./vite.config.ts:/usr/src/app/vite.config.ts # Mount vite config for vite build
+    ports:
+      - "3000:3000" # Expose port 3000 to the host machine
+    working_dir: /usr/src/app # Set the working directory inside the container
+    command: sh -c "npm install && npm run build && npm run preview" # Install dependencies, build, and preview the app
+
+networks:
+  default:
+    driver: bridge
