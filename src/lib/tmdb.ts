@@ -177,4 +177,4 @@ export class TMDB {
   }
 }
 
-export const api = new TMDB(import.meta.env.VITE_TMDB_API_KEY);
+export const api = new TMDB(import.meta.env.VITE_TMDB_API);
