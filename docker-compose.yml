@@ -1,23 +1,21 @@
-version: '3.7'
+version: '3.8'
 
 services:
   app:
-    image: node:18-alpine
-    container_name: netflix-clone-app
-    environment:
-      - VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY} # Pass your TMDB API key from the .env file
-    volumes:
-      - ./src:/usr/src/app/src # Mount the src directory
-      - ./public:/usr/src/app/public # Mount the public directory
-      - ./package.json:/usr/src/app/package.json # Mount package.json for npm install
-      - ./pnpm-lock.yaml:/usr/src/app/pnpm-lock.yaml # Mount lock file if you're using pnpm
-      - ./tsconfig.json:/usr/src/app/tsconfig.json # Mount tsconfig.json for the typescript config
-      - ./vite.config.ts:/usr/src/app/vite.config.ts # Mount vite config for vite build
+    build: .
     ports:
-      - "5173:5173" # Expose port 5173 to the host machine
-    working_dir: /usr/src/app # Set the working directory inside the container
-    command: sh -c "npm install && npm run dev -- --host" # Add --host to make it accessible outside the container
+      - "8080:8080" # Maps container's port 8080 to host's port 8080
+    environment:
+      - NODE_ENV=production
+      - VITE_TMDB_API_KEY=${VITE_TMDB_API_KEY} # Use the value from the .env file
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    networks:
+      - app-network
+    env_file:
+      - .env # Load environment variables from the .env file
 
 networks:
-  default:
+  app-network:
     driver: bridge

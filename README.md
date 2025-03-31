@@ -80,7 +80,7 @@ cd nfx && pnpm install
 3. Create `.env.local` file and paste your [TMDB API](https://developers.themoviedb.org/3) key:
 
 ```
-VITE_TMDB_API=e745ed749123cc3d15250957541504b9
+VITE_TMDB_API_KEY=e745ed749123cc3d15250957541504b9
 ```
 
 4. Now start the application:
