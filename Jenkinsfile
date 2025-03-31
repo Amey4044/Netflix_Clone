@@ -3,9 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone'
-        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config' // Path to Kubeconfig
-        PNPM_HOME = "${HOME}/.local/share/pnpm"
-        PATH = "${PNPM_HOME}:${PATH}:/usr/local/bin:/usr/bin:/usr/sbin"
+        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
@@ -20,7 +18,7 @@ pipeline {
                 script {
                     sh '''
                         curl -fsSL https://get.pnpm.io/install.sh | sh -
-                        echo "PNPM installed successfully!"
+                        export PATH=${HOME}/.local/share/pnpm:$PATH
                         pnpm --version
                     '''
                 }
@@ -57,28 +55,25 @@ pipeline {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
                         sh '''
-                            # Adjust permissions for Kubeconfig
-                            sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
-                            sudo chmod -R 700 /var/lib/jenkins/.kube
-
-                            # Switch to the correct Kubernetes context
+                            # Set Kubeconfig permissions (Do this manually before running the pipeline)
+                            export KUBECONFIG=${KUBECONFIG_PATH}
                             kubectl config use-context minikube
 
                             # Deploy to Kubernetes
                             if [ -f k8s/deployment.yaml ] && [ -f k8s/service.yaml ]; then
-                                kubectl apply -f k8s/deployment.yaml
-                                kubectl apply -f k8s/service.yaml
-                                kubectl rollout restart deployment/netflix-clone
-                                kubectl rollout status deployment/netflix-clone
+                                kubectl apply -f k8s/deployment.yaml -n default
+                                kubectl apply -f k8s/service.yaml -n default
+                                kubectl rollout restart deployment/netflix-clone -n default
+                                kubectl rollout status deployment/netflix-clone -n default
                             else
                                 echo "❌ Kubernetes manifest files not found!"
                                 exit 1
                             fi
 
-                            # Debugging Steps
-                            kubectl get pods -o wide
-                            kubectl logs -l app=netflix-clone --tail=50
-                            kubectl get svc netflix-clone -o yaml
+                            # Debugging
+                            kubectl get pods -o wide -n default
+                            kubectl logs -l app=netflix-clone --tail=50 -n default
+                            kubectl get svc netflix-clone -o yaml -n default
                         '''
                     }
                 }
