@@ -4,17 +4,14 @@ services:
   app:
     build: .
     ports:
-      - "8081:80" # Maps container's port 8080 to host's port 8080
+      - "8081:80" # Maps container's port 80 to host's port 8081
     environment:
       - NODE_ENV=production
-      - VITE_TMDB_API=${VITE_TMDB_API} # Use the value from the .env file
-    volumes:
-      - ./src:/app/src
-      - ./public:/app/public
-    networks:
-      - app-network
+      - VITE_TMDB_API=${VITE_TMDB_API} # Loads from .env file
     env_file:
       - .env # Load environment variables from the .env file
+    networks:
+      - app-network
 
 networks:
   app-network:
