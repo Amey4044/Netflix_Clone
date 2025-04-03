@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    triggers {
+        // Trigger build on GitHub push events
+        githubPush() // This line sets up the GitHub webhook trigger
+    }
+
     environment {
         DOCKER_IMAGE = 'cypher7/netflix-clone-main-app'
         KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'
@@ -11,6 +16,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
+                // Checkout code from the main branch
                 git branch: 'main', credentialsId: 'git-credentials', url: 'https://github.com/Amey4044/Netflix_Clone.git'
             }
         }
