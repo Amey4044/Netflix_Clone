@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'cypher7/netflix-clone'
+        DOCKER_IMAGE = 'cypher7/netflix-clone-main-app'
         KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'
         PNPM_HOME = "/var/lib/jenkins/.local/share/pnpm"
         PATH = "${PNPM_HOME}:${PATH}:/usr/local/bin:/usr/bin:/usr/sbin"
@@ -78,7 +78,7 @@ pipeline {
                             kubectl logs -l app=netflix-clone -n netflix --tail=50
 
                             echo "🔍 Fetching Service Info..."
-                            kubectl get svc netflix-clone -n netflix -o yaml
+                            kubectl get svc netflix-clone-service -n netflix -o yaml
                         '''
                     }
                 }
