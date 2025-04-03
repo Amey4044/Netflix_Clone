@@ -89,8 +89,9 @@ pipeline {
                             '''
                         } catch (Exception e) {
                             echo "❌ Deployment failed, rolling back..."
-                            // Rollback to the previous revision
-                            sh 'helm rollback netflix-clone 1 -n netflix'
+                            // Fetch the last successful revision and roll back
+                            def lastRevision = sh(script: 'helm history netflix-clone -n netflix | tail -n 2 | head -n 1 | awk \'{print $1}\'', returnStdout: true).trim()
+                            sh "helm rollback netflix-clone ${lastRevision} -n netflix"
                             error("Rollback completed. Check the logs for more details.")
                         }
                     }
@@ -102,9 +103,11 @@ pipeline {
     post {
         success {
             echo '🚀 Deployment to AWS EKS successful! ✅'
+            // Add notification logic here if needed
         }
         failure {
             echo '❌ Deployment failed. Check logs for details.'
+            // Add notification logic here if needed
         }
     }
 }
