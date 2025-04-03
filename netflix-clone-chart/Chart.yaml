@@ -1,6 +1,10 @@
 apiVersion: v2
-name: netflix-clone
-description: A Helm chart for Netflix Clone on Kubernetes
+name: netflix-clone-chart
+description: A Helm chart for deploying the Netflix Clone application on AWS EKS
 type: application
-version: 0.1.0
+version: 1.0.0
 appVersion: "1.0.0"
+
+maintainers:
+  - name: Cypher7
+    email: ameydeshmukh1111@gmail.com
