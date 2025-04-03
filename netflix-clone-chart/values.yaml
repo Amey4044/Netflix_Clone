@@ -98,4 +98,4 @@ argocd:
   syncPolicy:
     automated:
       prune: true  # Remove old versions
-      selfHeal: true  # Auto-correct drift
+      selfHeal: true  
