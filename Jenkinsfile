@@ -24,7 +24,7 @@ pipeline {
                         echo "export PATH=/var/lib/jenkins/.local/share/pnpm:$PATH" >> ~/.profile
                         . ~/.bashrc
                         . ~/.profile
-                        echo "PNPM installed successfully!"
+                        echo "✅ PNPM installed successfully!"
                         pnpm --version
                     '''
                 }
@@ -58,29 +58,35 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to AWS EKS') {
             steps {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
                         sh '''#!/bin/bash
-                            sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
-                            sudo chmod -R 700 /var/lib/jenkins/.kube
+                            echo "🚀 Setting Kubernetes context to AWS EKS..."
+                            kubectl config use-context arn:aws:eks:ap-south-1:905418132848:cluster/netflix-eks-cluster
 
-                            kubectl config use-context minikube
+                            echo "✅ Verifying connection..."
+                            kubectl cluster-info
+                            kubectl get nodes
 
+                            echo "🔄 Deploying Netflix Clone..."
                             if [ -f k8s/deployment.yaml ] && [ -f k8s/service.yaml ]; then
                                 kubectl apply -f k8s/deployment.yaml
                                 kubectl apply -f k8s/service.yaml
-                                kubectl rollout restart deployment/netflix-clone
-                                kubectl rollout status deployment/netflix-clone
+                                kubectl rollout restart deployment/netflix-clone -n netflix
+                                kubectl rollout status deployment/netflix-clone -n netflix
                             else
                                 echo "❌ Kubernetes manifest files not found!"
                                 exit 1
                             fi
 
-                            kubectl get pods -o wide
-                            kubectl logs -l app=netflix-clone --tail=50
-                            kubectl get svc netflix-clone -o yaml
+                            echo "📌 Fetching Running Pods..."
+                            kubectl get pods -n netflix -o wide
+                            kubectl logs -l app=netflix-clone -n netflix --tail=50
+
+                            echo "🔍 Fetching Service Info..."
+                            kubectl get svc netflix-clone -n netflix -o yaml
                         '''
                     }
                 }
@@ -90,7 +96,7 @@ pipeline {
 
     post {
         success {
-            echo '🚀 Deployment successful! ✅'
+            echo '🚀 Deployment to AWS EKS successful! ✅'
         }
         failure {
             echo '❌ Deployment failed. Check logs for details.'
