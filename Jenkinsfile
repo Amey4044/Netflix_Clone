@@ -68,24 +68,31 @@ pipeline {
             steps {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
-                        sh '''#!/bin/bash
-                            echo "🚀 Setting Kubernetes context to AWS EKS..."
-                            kubectl config use-context arn:aws:eks:ap-south-1:905418132848:cluster/netflix-eks-cluster
+                        try {
+                            sh '''#!/bin/bash
+                                echo "🚀 Setting Kubernetes context to AWS EKS..."
+                                kubectl config use-context arn:aws:eks:ap-south-1:905418132848:cluster/netflix-eks-cluster
 
-                            echo "✅ Verifying connection..."
-                            kubectl cluster-info
-                            kubectl get nodes
+                                echo "✅ Verifying connection..."
+                                kubectl cluster-info
+                                kubectl get nodes
 
-                            echo "🔄 Deploying Netflix Clone using Helm..."
-                            helm upgrade --install netflix-clone ./netflix-clone-chart/ -n netflix --create-namespace
+                                echo "🔄 Deploying Netflix Clone using Helm..."
+                                helm upgrade --install netflix-clone ./netflix-clone-chart/ -n netflix --create-namespace
 
-                            echo "📌 Fetching Running Pods..."
-                            kubectl get pods -n netflix -o wide
-                            kubectl logs -l app=netflix-clone -n netflix --tail=50
+                                echo "📌 Fetching Running Pods..."
+                                kubectl get pods -n netflix -o wide
+                                kubectl logs -l app=netflix-clone -n netflix --tail=50
 
-                            echo "🔍 Fetching Service Info..."
-                            kubectl get svc netflix-clone-service -n netflix -o yaml
-                        '''
+                                echo "🔍 Fetching Service Info..."
+                                kubectl get svc netflix-clone-service -n netflix -o yaml
+                            '''
+                        } catch (Exception e) {
+                            echo "❌ Deployment failed, rolling back..."
+                            // Rollback to the previous revision
+                            sh 'helm rollback netflix-clone 1 -n netflix'
+                            error("Rollback completed. Check the logs for more details.")
+                        }
                     }
                 }
             }
