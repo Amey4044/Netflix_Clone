@@ -2,8 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
 spec:
-  replicas: {{ .Values.replicaCount }}  # ✅ Uses replicaCount from values.yaml
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}
@@ -12,14 +14,19 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
-      - name: {{ .Release.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"  # ✅ Uses image.repository & tag
-        imagePullPolicy: {{ .Values.image.pullPolicy }}  # ✅ Uses image.pullPolicy
+      - name: netflix-clone
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: 80
         env:
-        {{- toYaml .Values.env | nindent 8 }}  # ✅ Uses env variables dynamically
+        - name: VITE_TMDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.env.VITE_TMDB_API_KEY.secretKeyRef.name }}
+              key: {{ .Values.env.VITE_TMDB_API_KEY.secretKeyRef.key }}
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpu }}

@@ -10,7 +10,15 @@ service:
   port: 80
 
 ingress:
-  enabled: false
+  enabled: false  # Set to true if using Ingress
+  className: ""
+  annotations: {}
+  hosts:
+    - host: netflix-clone.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
 
 resources:
   limits:
@@ -21,8 +29,11 @@ resources:
     memory: "256Mi"
 
 env:
-  - name: VITE_TMDB_API_KEY
-    valueFrom:
-      secretKeyRef:
-        name: netflix-secrets
-        key: VITE_TMDB_API_KEY
+  VITE_TMDB_API_KEY:
+    secretKeyRef:
+      name: netflix-secrets
+      key: VITE_TMDB_API_KEY
+
+serviceAccount:
+  create: true
+  name: "netflix-clone-main-app"
