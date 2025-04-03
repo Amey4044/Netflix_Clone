@@ -64,6 +64,17 @@ pipeline {
             }
         }
 
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    // Run the container in detached mode
+                    sh '''#!/bin/bash
+                        docker run -d --name netflix-clone -p 80:80 $DOCKER_IMAGE:latest
+                    '''
+                }
+            }
+        }
+
         stage('Deploy to AWS EKS') {
             steps {
                 script {
