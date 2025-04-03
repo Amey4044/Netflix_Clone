@@ -11,6 +11,7 @@ pipeline {
         KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'
         PNPM_HOME = "/var/lib/jenkins/.local/share/pnpm"
         PATH = "${PNPM_HOME}:${PATH}:/usr/local/bin:/usr/bin:/usr/sbin"
+      
     }
 
     stages {
@@ -64,6 +65,17 @@ pipeline {
             }
         }
 
+        stage('Cleanup Old Container') {
+            steps {
+                script {
+                    // Remove existing container if it exists
+                    sh '''#!/bin/bash
+                        docker rm -f netflix-clone || true
+                    '''
+                }
+            }
+        }
+
         stage('Run Docker Container') {
             steps {
                 script {
@@ -100,8 +112,9 @@ pipeline {
                             '''
                         } catch (Exception e) {
                             echo "❌ Deployment failed, rolling back..."
+                            
                             // Fetch the last successful revision and roll back
-                            def lastRevision = sh(script: 'helm history netflix-clone -n netflix | tail -n 2 | head -n 1 | awk \'{print $1}\'', returnStdout: true).trim()
+                            def lastRevision = sh(script: 'helm history netflix-clone -n netflix --max 2 | tail -n 2 | head -n 1 | awk \'{print $1}\'', returnStdout: true).trim()
                             if (lastRevision) {
                                 sh "helm rollback netflix-clone ${lastRevision} -n netflix"
                                 echo "Rollback to revision ${lastRevision} completed."
@@ -119,11 +132,13 @@ pipeline {
     post {
         success {
             echo '🚀 Deployment to AWS EKS successful! ✅'
-            // Add notification logic here if needed
+            // Notify success on Slack
+        
         }
         failure {
             echo '❌ Deployment failed. Check logs for details.'
-            // Add notification logic here if needed
+            // Notify failure on Slack
+        
         }
     }
 }
