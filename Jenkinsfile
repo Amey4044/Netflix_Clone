@@ -89,7 +89,7 @@ pipeline {
                             '''
                         } catch (Exception e) {
                             echo "❌ Deployment failed, rolling back..."
-                            // Fetch the last successful revision and roll back
+                          
                             def lastRevision = sh(script: 'helm history netflix-clone -n netflix | tail -n 2 | head -n 1 | awk \'{print $1}\'', returnStdout: true).trim()
                             sh "helm rollback netflix-clone ${lastRevision} -n netflix"
                             error("Rollback completed. Check the logs for more details.")
