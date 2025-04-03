@@ -70,16 +70,8 @@ pipeline {
                             kubectl cluster-info
                             kubectl get nodes
 
-                            echo "🔄 Deploying Netflix Clone..."
-                            if [ -f k8s/deployment.yaml ] && [ -f k8s/service.yaml ]; then
-                                kubectl apply -f k8s/deployment.yaml
-                                kubectl apply -f k8s/service.yaml
-                                kubectl rollout restart deployment/netflix-clone -n netflix
-                                kubectl rollout status deployment/netflix-clone -n netflix
-                            else
-                                echo "❌ Kubernetes manifest files not found!"
-                                exit 1
-                            fi
+                            echo "🔄 Deploying Netflix Clone using Helm..."
+                            helm upgrade --install netflix-clone ./netflix-clone-chart/ -n netflix --create-namespace
 
                             echo "📌 Fetching Running Pods..."
                             kubectl get pods -n netflix -o wide
