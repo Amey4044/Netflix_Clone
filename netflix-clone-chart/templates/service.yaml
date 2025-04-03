@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "netflix-clone-chart.fullname" . }}
+  labels:
+    {{- include "netflix-clone-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "netflix-clone-chart.selectorLabels" . | nindent 4 }}
