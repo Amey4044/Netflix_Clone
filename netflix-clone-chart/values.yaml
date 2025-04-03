@@ -10,7 +10,7 @@ service:
   port: 80
 
 ingress:
-  enabled: false  # Set to true if using Ingress
+  enabled: false 
   className: ""
   annotations: {}
   hosts:
